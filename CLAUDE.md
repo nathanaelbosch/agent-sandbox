@@ -71,7 +71,6 @@ The project consists of three main components:
 **Read-Only Access:**
 - Julia binaries (auto-detected from host)
 - `~/.local/share/uv/python/` (for PyCall and Python-dependent Julia packages)
-- `~/.claude/skills/` and `~/.claude/plugins/` (Claude only — host skills/plugins)
 
 **Blocked:** SSH keys, AWS credentials, home directory, host environment variables
 

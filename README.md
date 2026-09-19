@@ -89,7 +89,6 @@ All agents share a single container image with common tooling (Node.js, Python, 
 **Read-only access:**
 - Julia binaries (auto-detected from host)
 - `~/.local/share/uv/python/` (for PyCall and Python-dependent Julia packages)
-- `~/.claude/skills/` and `~/.claude/plugins/` (Claude only — host skills and plugins)
 
 **Blocked:**
 - `~/.ssh/`, `~/.aws/`, `~/.config/` (except gh), host environment variables

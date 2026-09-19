@@ -151,8 +151,7 @@ applies in **every** working directory, not just specific projects. Detection:
   — changes persist on the host, treat it with care) and this home directory
   (`/home/sandbox`, persisted per agent/profile at `~/.agent-sandbox/homes/<agent>[-<profile>]/`).
   If present: `~/.julia/` and `~/R/` (shared with the host).
-- **Read-only**: Julia binaries, `~/.local/share/uv/python/`, and (Claude only)
-  host `~/.claude/skills/` and `~/.claude/plugins/`.
+- **Read-only**: Julia binaries, `~/.local/share/uv/python/`.
 - **No host secrets**: no SSH keys, AWS credentials, or host environment
   variables. Git over SSH (push, pull, fetch) will fail. Leave these to the
   user; do not switch remotes to HTTPS or otherwise work around it.
@@ -277,17 +276,6 @@ run_container() {
     # UV Python installations (for PyCall and other Python-dependent Julia packages)
     [ -d "${HOME}/.local/share/uv/python" ] && OPTS+=(--bind "${HOME}/.local/share/uv/python:${HOME}/.local/share/uv/python:ro")
 
-    # Claude-specific: host skills and plugins (read-only)
-    if [ "${AGENT}" = claude ]; then
-        if [ -d "${HOME}/.claude/skills" ]; then
-            mkdir -p "${SANDBOX_HOME}/.claude/skills"
-            OPTS+=(--bind "${HOME}/.claude/skills:/home/sandbox/.claude/skills:ro")
-        fi
-        if [ -d "${HOME}/.claude/plugins" ]; then
-            mkdir -p "${SANDBOX_HOME}/.claude/plugins"
-            OPTS+=(--bind "${HOME}/.claude/plugins:/home/sandbox/.claude/plugins:ro")
-        fi
-    fi
 
     # Working directory - added after Julia binds so it takes precedence when inside ~/.julia/
     OPTS+=(--bind "$(pwd):$(pwd)")
