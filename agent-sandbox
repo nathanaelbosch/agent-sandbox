@@ -154,9 +154,13 @@ applies in **every** working directory, not just specific projects. Detection:
 - **Read-only**: Julia binaries, `~/.local/share/uv/python/`, and (Claude only)
   host `~/.claude/skills/` and `~/.claude/plugins/`.
 - **No host secrets**: no SSH keys, AWS credentials, or host environment
-  variables. Use `gh` (authenticated via an ephemeral credentials copy) for
-  git remotes/GitHub; SSH pushes will not work.
+  variables. Git over SSH (push, pull, fetch) will fail. Leave these to the
+  user; do not switch remotes to HTTPS or otherwise work around it.
+- **GitHub CLI**: `gh` uses a copy of the host's credentials, with whatever
+  permissions the user gave them.
 - **Ephemeral**: anything installed outside the persisted home is lost on exit.
+  If a tool is missing (e.g. a PDF viewer, a CLI utility), ask the user to add
+  it to the sandbox.
 - **Git identity** is injected from the host via `GIT_AUTHOR_*`/`GIT_COMMITTER_*`
   environment variables — commits work normally.
 - **Python**: use `uv`; project environments go in `.venv-sandbox/` (not `.venv/`)
