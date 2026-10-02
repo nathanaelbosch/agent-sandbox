@@ -52,6 +52,7 @@ The project consists of three main components:
 │   ├── claude-work/         # Claude --profile work
 │   └── pi/                  # default Pi home
 └── shared/
+    ├── gh/                  # sandbox-only GitHub CLI login (all agents)
     └── claude/
         └── projects/        # shared transcript pool
 ```
@@ -64,15 +65,13 @@ The project consists of three main components:
 - `~/R/` (R user library)
 - Agent persistent home (`~/.agent-sandbox/homes/<agent>/`; `--profile NAME` uses `~/.agent-sandbox/homes/<agent>-NAME/`)
 - `~/.agent-sandbox/shared/<agent>/projects/` (only with `--shared-history`)
-
-**Ephemeral Copy (fresh each run):**
-- `~/.config/gh/` → copied to `/tmp/.config/gh` so gh can perform config migrations
+- `~/.agent-sandbox/shared/gh/` → `/home/sandbox/.config/gh` (sandbox-only GitHub CLI login shared by all agents/profiles; the host's `~/.config/gh` is not exposed)
 
 **Read-Only Access:**
 - Julia binaries (auto-detected from host)
 - `~/.local/share/uv/python/` (for PyCall and Python-dependent Julia packages)
 
-**Blocked:** SSH keys, AWS credentials, home directory, host environment variables
+**Blocked:** SSH keys, AWS credentials, host GitHub CLI login, home directory, host environment variables
 
 **Instance Isolation:** Each container instance gets its own temp directory (`/tmp/agent-sandbox-$UID/instance.XXXXXX`), ensuring multiple users and multiple instances don't interfere. Temp directories are cleaned up on exit.
 

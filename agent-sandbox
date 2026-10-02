@@ -81,6 +81,9 @@ SANDBOX_HOME="${SANDBOX_BASE}/homes/${AGENT}"
 # Transcript pool shared across profiles when --shared-history is set
 SANDBOX_SHARED_PROJECTS="${SANDBOX_BASE}/shared/${AGENT}/projects"
 
+# GitHub CLI config (sandbox-only credentials) shared by all agents and profiles
+SANDBOX_SHARED_GH="${SANDBOX_BASE}/shared/gh"
+
 # Per-user tmp base directory (avoid conflicts with other users)
 SANDBOX_TMP_BASE="/tmp/agent-sandbox-${UID}"
 
@@ -155,8 +158,8 @@ applies in **every** working directory, not just specific projects. Detection:
 - **No host secrets**: no SSH keys, AWS credentials, or host environment
   variables. Git over SSH (push, pull, fetch) will fail. Leave these to the
   user; do not switch remotes to HTTPS or otherwise work around it.
-- **GitHub CLI**: `gh` uses a copy of the host's credentials, with whatever
-  permissions the user gave them.
+- **GitHub CLI**: `gh` uses a sandbox-only login (separate from the user's own),
+  shared by all agents, with whatever permissions the user gave it.
 - **Ephemeral**: anything installed outside the persisted home is lost on exit.
   If a tool is missing (e.g. a PDF viewer, a CLI utility), ask the user to add
   it to the sandbox.
@@ -248,12 +251,11 @@ run_container() {
         OPTS+=(--bind "${SANDBOX_SHARED_PROJECTS}:/home/sandbox/.claude/projects")
     fi
 
-    # GitHub CLI credentials (copy to writable temp location - gh needs write access for migrations)
-    if [ -d "${HOME}/.config/gh" ]; then
-        mkdir -p "${SANDBOX_TMP}/.config/gh"
-        cp -r "${HOME}/.config/gh/"* "${SANDBOX_TMP}/.config/gh/"
-        OPTS+=(--env "GH_CONFIG_DIR=/tmp/.config/gh")
-    fi
+    # GitHub CLI config: a sandbox-only login shared by all agents and profiles,
+    # separate from the host's ~/.config/gh. Writable since gh migrates its config.
+    mkdir -p "${SANDBOX_SHARED_GH}" "${SANDBOX_HOME}/.config/gh"
+    chmod 700 "${SANDBOX_SHARED_GH}"
+    OPTS+=(--bind "${SANDBOX_SHARED_GH}:/home/sandbox/.config/gh")
 
     # Julia packages and installation
     # Bind to sandbox home for normal access, AND to original host path so

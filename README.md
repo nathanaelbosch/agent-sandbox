@@ -37,6 +37,16 @@ agent-sandbox claude --exec claude-agent-acp   # ACP bridge for Emacs agent-shel
 agent-sandbox pi --exec npm install -g pi-synthetic  # Install a Pi plugin
 ```
 
+### GitHub CLI
+
+`gh` inside the sandbox does not use your host login. All agents and profiles share a separate, sandbox-only login stored in `~/.agent-sandbox/shared/gh/`, so you can give your agents a token with narrower permissions (e.g. a fine-grained PAT limited to specific repositories). Log in once from the host:
+
+```bash
+GH_CONFIG_DIR=~/.agent-sandbox/shared/gh gh auth login --with-token --insecure-storage < token.txt
+```
+
+`--insecure-storage` keeps the token in `hosts.yml` instead of the host keyring, which the sandbox cannot read. Omit `--with-token` to use the interactive login flow.
+
 ### Profiles (multiple logins)
 
 Pass `--profile NAME` to use a dedicated home directory, giving that profile a completely independent login, config, and history:
@@ -69,10 +79,14 @@ All agents share a single container image with common tooling (Node.js, Python, 
 ```
 ~/.agent-sandbox/
 ├── agent-sandbox.sif        # container image (shared by all agents)
-└── homes/
-    ├── claude/              # default Claude home
-    ├── claude-work/         # Claude --profile work
-    └── pi/                  # default Pi home
+├── homes/
+│   ├── claude/              # default Claude home
+│   ├── claude-work/         # Claude --profile work
+│   └── pi/                  # default Pi home
+└── shared/
+    ├── gh/                  # sandbox-only GitHub CLI login (all agents)
+    └── claude/
+        └── projects/        # shared transcript pool (--shared-history)
 ```
 
 ### Security model
@@ -82,16 +96,14 @@ All agents share a single container image with common tooling (Node.js, Python, 
 - `~/.julia/` (Julia packages)
 - `~/R/` (R user library)
 - Agent persistent home (`~/.agent-sandbox/homes/<agent>/`)
-
-**Ephemeral copy:**
-- `~/.config/gh/` → `/tmp/.config/gh` (GitHub CLI credentials, copied fresh each run)
+- `~/.agent-sandbox/shared/gh/` → `~/.config/gh/` (sandbox-only GitHub CLI login, shared by all agents)
 
 **Read-only access:**
 - Julia binaries (auto-detected from host)
 - `~/.local/share/uv/python/` (for PyCall and Python-dependent Julia packages)
 
 **Blocked:**
-- `~/.ssh/`, `~/.aws/`, `~/.config/` (except gh), host environment variables
+- `~/.ssh/`, `~/.aws/`, `~/.config/` (including the host's `gh` login), host environment variables
 
 ### Python
 
