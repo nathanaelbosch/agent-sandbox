@@ -42,14 +42,15 @@ agent-sandbox pi --exec npm install -g pi-synthetic  # Install a Pi plugin
 `gh` inside the sandbox does not use your host login. All agents and profiles share a separate, sandbox-only login stored in `~/.agent-sandbox/shared/gh/`, so you can give your agents a token with narrower permissions (e.g. a fine-grained PAT limited to specific repositories). Log in once from the host:
 
 ```bash
-GH_CONFIG_DIR=~/.agent-sandbox/shared/gh gh auth login --with-token --insecure-storage < token.txt
+mkdir -p ~/.agent-sandbox/shared/gh && chmod 700 ~/.agent-sandbox/shared/gh
+GH_CONFIG_DIR=~/.agent-sandbox/shared/gh gh auth login --with-token --insecure-storage
 ```
 
-`--insecure-storage` keeps the token in `hosts.yml` instead of the host keyring, which the sandbox cannot read. Omit `--with-token` to use the interactive login flow.
+Paste the token and press Ctrl-D, which keeps it out of files and shell history. `--insecure-storage` keeps the token in `hosts.yml` instead of the host keyring, which the sandbox cannot read. Omit `--with-token` to use the interactive login flow. Check with `agent-sandbox claude --exec gh auth status`.
 
 ### Profiles (multiple logins)
 
-Pass `--profile NAME` to use a dedicated home directory, giving that profile a completely independent login, config, and history:
+Pass `--profile NAME` to use a dedicated home directory, giving that profile an independent agent login, config, and history (the [`gh` login](#github-cli) stays shared by all profiles):
 
 ```bash
 agent-sandbox claude --profile work       # first run: log in with work subscription
@@ -68,7 +69,7 @@ agent-sandbox claude --profile work --shared-history
 agent-sandbox claude --profile personal --shared-history
 ```
 
-Logins, config, and settings stay per-profile — only transcripts are shared.
+Agent logins, config, and settings stay per-profile — only transcripts (and the [`gh` login](#github-cli)) are shared.
 
 ## How It Works
 

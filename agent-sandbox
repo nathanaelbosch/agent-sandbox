@@ -344,7 +344,8 @@ while [ $# -gt 0 ]; do
     esac
 done
 
-# Resolve profile -> dedicated persistent home (isolated login + config + history)
+# Resolve profile -> dedicated persistent home (isolated agent login + config + history;
+# the gh login in shared/gh stays common to all profiles)
 if [ -n "${PROFILE}" ]; then
     if [[ ! "${PROFILE}" =~ ^[a-zA-Z0-9_-]+$ ]]; then
         echo "Invalid profile name: '${PROFILE}' (use letters, digits, '-' or '_')" >&2

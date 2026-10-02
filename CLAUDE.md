@@ -82,7 +82,7 @@ The project consists of three main components:
 - NVIDIA GPU support via `--nv` flag
 - `--exec` mode runs arbitrary commands with the same isolation; uses `apptainer exec` instead of `apptainer run`
 - `--profile NAME` selects a dedicated persistent home, enabling multiple independent logins per agent
-- `--shared-history` (Claude only) bind-mounts a common transcript pool so profiles share resumable conversation history while keeping per-profile credentials/config
+- `--shared-history` (Claude only) bind-mounts a common transcript pool so profiles share resumable conversation history while keeping per-profile agent credentials/config (the `gh` login is shared regardless)
 
 ## Adding a New Agent
 
