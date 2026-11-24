@@ -73,7 +73,7 @@ The project consists of three main components:
 
 **Blocked:** SSH keys, AWS credentials, host GitHub CLI login, home directory, host environment variables
 
-**Instance Isolation:** Each container instance gets its own temp directory (`/tmp/agent-sandbox-$UID/instance.XXXXXX`), ensuring multiple users and multiple instances don't interfere. Temp directories are cleaned up on exit.
+**Instance Isolation:** Each container instance gets its own temp directory (`/tmp/agent-sandbox-$UID/instance.XXXXXX`), ensuring multiple users and multiple instances don't interfere. Temp directories are cleaned up on exit; at startup, instance directories older than a day that no running process has mounted (left by crashed or killed sessions) are swept.
 
 ## Container Environment
 

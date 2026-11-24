@@ -100,6 +100,19 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Remove instance dirs left behind by sessions that never ran cleanup (crash,
+# kill -9). A dir counts as in use if any process has it mounted or names it on
+# its command line; dirs modified in the last day are kept as a safety margin.
+sweep_stale_tmp() {
+    [ -d "${SANDBOX_TMP_BASE}" ] || return 0
+    local in_use dir
+    in_use=$( { ps -u "${UID}" -o args= 2>/dev/null; cat /proc/[0-9]*/mountinfo 2>/dev/null; } \
+        | grep -o "agent-sandbox-${UID}/instance\.[A-Za-z0-9]\{6\}" | sed 's|.*/||' | sort -u ) || true
+    while IFS= read -r dir; do
+        grep -qxF "$(basename "${dir}")" <<< "${in_use}" || rm -rf -- "${dir}"
+    done < <(find "${SANDBOX_TMP_BASE}" -mindepth 1 -maxdepth 1 -name 'instance.*' -mmin +1440 2>/dev/null)
+}
+
 # Initialize persistent home directory
 init_sandbox_home() {
     mkdir -p "${SANDBOX_HOME}"/{.local/bin,.local/share/uv,.config}
@@ -231,8 +244,11 @@ run_container() {
     # Create per-instance temp directory (cleaned up on exit via trap)
     mkdir -p "${SANDBOX_TMP_BASE}"
     chmod 700 "${SANDBOX_TMP_BASE}"  # Restrict to owner only
+    sweep_stale_tmp
     SANDBOX_TMP=$(mktemp -d "${SANDBOX_TMP_BASE}/instance.XXXXXX")
 
+    # Note: apptainer runs as a child (not via exec) so the EXIT trap can remove
+    # SANDBOX_TMP afterwards; under set -e its exit status is still propagated.
     local OPTS=(
         --containall --cleanenv --userns --nv
         --home "${SANDBOX_HOME}:/home/sandbox"
@@ -320,7 +336,7 @@ run_container() {
         # Ensure agent CLI is installed first (normally done by runscript).
         # Installation output goes to stderr to keep stdin/stdout clean for
         # protocols like ACP that communicate over stdio.
-        exec apptainer exec "${OPTS[@]}" "${SANDBOX_SIF}" bash -c '
+        apptainer exec "${OPTS[@]}" "${SANDBOX_SIF}" bash -c '
             RESOLVED_BIN=$(eval echo "${AGENT_BIN}")
             if [ ! -x "${RESOLVED_BIN}" ]; then
                 echo "Installing ${AGENT_NAME}..." >&2
@@ -329,7 +345,7 @@ run_container() {
             exec "$@"
         ' _ "$@"
     else
-        exec apptainer run "${OPTS[@]}" "${SANDBOX_SIF}" "$@"
+        apptainer run "${OPTS[@]}" "${SANDBOX_SIF}" "$@"
     fi
 }
 
