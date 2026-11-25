@@ -116,7 +116,7 @@ echo ".venv-sandbox/" >> .gitignore
 
 ### Julia
 
-Julia binaries are detected from your host system and bind-mounted read-only. `~/.julia/` is mounted read-write for package management and also exposed at its original host path to support hardcoded paths in precompilation caches.
+Julia binaries are detected from your host system and bind-mounted read-only. `~/.julia/` is mounted read-write for package management and also exposed at its original host path. `JULIA_DEPOT_PATH` is set to that host path inside the sandbox, so Julia (and juliaup) see exactly the same paths as on the host: precompilation caches, which can contain hardcoded absolute paths, work both inside and outside the sandbox no matter where they were built.
 
 ### agent-shell (Emacs ACP)
 
