@@ -165,6 +165,8 @@ applies in **every** working directory, not just specific projects. Detection:
   it to the sandbox.
 - **Git identity** is injected from the host via `GIT_AUTHOR_*`/`GIT_COMMITTER_*`
   environment variables — commits work normally.
+- **Julia**: `JULIA_DEPOT_PATH` points at the host path of `~/.julia`, so
+  precompiled caches are shared with (and valid on) the host.
 - **Python**: use `uv`; project environments go in `.venv-sandbox/` (not `.venv/`)
   to avoid clashing with host projects.
 
@@ -263,8 +265,17 @@ run_container() {
     if [ -d "${HOME}/.julia" ]; then
         OPTS+=(--bind "${HOME}/.julia:/home/sandbox/.julia")
         # Also expose at original host path so hardcoded paths in precompilation
-        # cache/deps files still resolve (e.g., PyCall conda, artifact paths)
-        [ "${HOME}" != "/home/sandbox" ] && OPTS+=(--bind "${HOME}/.julia:${HOME}/.julia")
+        # cache/deps files still resolve (e.g., PyCall conda, artifact paths).
+        # It should work both ways: precompiled packages from the sandbox should
+        # work on the host, and packages precompiled on the host should work in
+        # the sandbox. So we always use the host path in the sandbox by setting
+        # JULIA_DEPOT_PATH and JULIAUP_DEPOT_PATH (otherwise it resolves via
+        # $HOME). The trailing ':' keeps Julia's bundled stdlib depots.
+        if [ "${HOME}" != "/home/sandbox" ]; then
+            OPTS+=(--bind "${HOME}/.julia:${HOME}/.julia")
+            OPTS+=(--env "JULIA_DEPOT_PATH=${HOME}/.julia:")
+            OPTS+=(--env "JULIAUP_DEPOT_PATH=${HOME}/.julia")
+        fi
     fi
     local julia_home; julia_home=$(detect_julia)
     # Only bind Julia install if it's not already under ~/.julia/ (which is already bound)
@@ -295,14 +306,8 @@ run_container() {
 
     # Set PATH (include Julia if detected)
     local container_path="/home/sandbox/.local/bin:/usr/local/bin:/usr/bin:/bin"
-    if [ -n "${julia_home}" ]; then
-        # Translate juliaup paths (under ~/.julia/) to the container home
-        if [[ "${julia_home}" == "${HOME}/.julia/"* ]]; then
-            container_path="/home/sandbox/.julia${julia_home#"${HOME}/.julia"}/bin:${container_path}"
-        else
-            container_path="${julia_home}/bin:${container_path}"
-        fi
-    fi
+    # Julia is reachable at its host path (~/.julia is also bound there)
+    [ -n "${julia_home}" ] && container_path="${julia_home}/bin:${container_path}"
     OPTS+=(--env "PATH=${container_path}")
 
     # Pass agent config to container
